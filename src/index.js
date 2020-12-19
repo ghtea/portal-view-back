@@ -19,11 +19,42 @@ dotenv.config({
 
 const app = express();
 
-// https://www.zerocho.com/category/NodeJS/post/5e9bf5b18dcb9c001f36b275
+const listUrlFront = [process.env.URL_FRONT, process.env.URL_FRONT_TESTING]
+
+const checkOrigin = (origin, callback) => {
+  
+  if (listUrlFront.indexOf(origin) !== -1) {
+    
+    callback(null, true)
+    
+  } else {
+    
+    callback(new Error('Not allowed by CORS'))
+  }
+    
+}
+
+/*
+app.use(cors({
+  origin: checkOrigin,
+  credentials: true
+}));
+*/
 app.use(cors({
   origin: true,
   credentials: true
 }));
+
+/*
+app.use( function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "https://pv.nextwing.me");
+
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");   
+  res.header('Access-Control-Allow-Methods', "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Credentials", "true");
+  next();
+});
+*/
 
 /*
 app.use((req, res, next) => {
@@ -37,10 +68,10 @@ app.use(bodyParser.json());
 
 app.use(cookieParser());
 
-app.use('/test', require('./routes/test'));
+//app.use('/test', require('./routes/test'));
 
 app.use('/auth', require('./routes/auth'));
-app.use('/item', require('./routes/item'));
+app.use('/portal', require('./routes/portal'));
 
 
 mongoose

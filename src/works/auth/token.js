@@ -54,6 +54,7 @@ function decodeToken(token) {
 exports.jwtMiddleware = async (req, res, next) => {
     console.log("hi, i'm jwtMiddleware");
     const token = req.cookies.access_token;//  access_token 을 읽어옵니다
+    console.log(req.cookies);
     console.log(token);
     
     if(!token) return next(); // 토큰이 없으면 바로 다음 작업을 진행합니다.

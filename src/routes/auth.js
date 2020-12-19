@@ -102,7 +102,7 @@ router.post('/log-in', async (req, res, next) => {
   try {
     
     const { email, password } = req.body; 
-    
+    console.log('hi');
     
     let foundUser = null;
     try {
@@ -151,6 +151,18 @@ router.post('/log-in', async (req, res, next) => {
           // return;
         }
         
+        // 접속 기록 수정
+        //console.log('found id');
+        //console.log(foundUser._id)
+        const filterAccessed = {_id: foundUser._id};
+        const updateAccessed = {accessed: Date.now() };
+        
+        await User.updateOne(filterAccessed, updateAccessed);
+        console.log("successfully updated user's accessed");
+        
+        
+        
+        // 프론트에 데이터 주기
         // 평범하게 assign 할때는 foundUser.키명 으로 되지만 아래처럼 이용할때는 _doc 써야하는 듯...
         let resUser = Object.assign({}, foundUser._doc);
         delete resUser.passwordHashed;   // 비번 정보는 제외하고 제공
@@ -158,13 +170,18 @@ router.post('/log-in', async (req, res, next) => {
         res.cookie('access_token', token, { httpOnly: true, maxAge: 1000 * 60 * 60 * 24 * 7 }); 
         // cookie 브라우저가 설정하려면 별도의 추가 설정 필요
         // https://www.zerocho.com/category/NodeJS/post/5e9bf5b18dcb9c001f36b275
+        
+        // console.log(res);
         res.json({
           codeSituation: "LogIn_Succeeded",
           payload: {
             _id: foundUser._id,
             kind: foundUser.kind,
             
-            email: foundUser.email
+            email: foundUser.email,
+            
+            joined: foundUser.joined,
+            accessed: foundUser.accessed
           }
         });
         //console.log(res)
@@ -208,6 +225,7 @@ router.get('/log-check', async (req, res, next) => {
   
   try {
     
+    console.log(req);
     //console.log("hello, I'm check")
     //console.log(req);
     
@@ -218,43 +236,46 @@ router.get('/log-check', async (req, res, next) => {
       console.log("there is no tUser")
     
       res.status(403).json({
-        codeSituation: "LogCheck_NoValidToken",
+        codeSituation: "LogCheck_NoValidToken"
       });
     }
     
-    
-    let foundUser = null;
-    try {
-      // 이메일로 계정 찾기
-      foundUser = await User.findOne({ email: tokenUser.email }).exec();
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({
-        codeSituation: "LogCheck_UnknownError",
-      }); // 여기선 내가 잘 모르는 에러라 뭘 할수가...   나중에 알수없는 에러라고 표시하자...
+    else {
+      let foundUser = null;
+      try {
+        // 이메일로 계정 찾기
+        foundUser = await User.findOne({ email: tokenUser.email }).exec();
+      } catch (error) {
+        console.log(error);
+        res.status(500).json({
+          codeSituation: "LogCheck_UnknownError"
+        }); 
+      }
+      
+      if(!foundUser) {
+      // 해당 유저가 존재하지 않으면
+        res.status(404).json({
+          codeSituation: "LogCheck_NotExsitingEmail"
+        }); 
+      }
+      
+      // 평범하게 assign 할때는 foundUser.키명 으로 되지만 아래처럼 이용할때는 _doc 써야하는 듯...
+      let resUser = Object.assign({}, foundUser._doc);
+      delete resUser.passwordHashed;
+      
+      //res.json(resUser); // 유저 정보로 응답합니다.
+      res.json({
+        codeSituation: "LogCheck_Succeeded",
+        payload: {
+          _id: resUser._id,
+          kind: resUser.kind,
+          
+          email: resUser.email
+        }
+      });
+      
     }
     
-    if(!foundUser) {
-    // 해당 유저가 존재하지 않으면
-      res.status(404).json({
-        codeSituation: "LogCheck_NotExsitingEmail",
-      }); 
-    }
-    
-    // 평범하게 assign 할때는 foundUser.키명 으로 되지만 아래처럼 이용할때는 _doc 써야하는 듯...
-    let resUser = Object.assign({}, foundUser._doc);
-    delete resUser.passwordHashed;
-    
-    //res.json(resUser); // 유저 정보로 응답합니다.
-    res.json({
-          codeSituation: "LogCheck_Succeeded",
-          payload: {
-            _id: resUser._id,
-            kind: resUser.kind,
-            
-            email: resUser.email
-          }
-        });
   } catch(error) { next(error) }
   
 });
@@ -282,14 +303,14 @@ router.put('/change-password', async (req, res, next) => {
       console.log(error);
       //res.status(500).send(error); // 여기선 내가 잘 모르는 에러라 뭘 할수가...   나중에 알수없는 에러라고 표시하자...
       res.status(500).json({
-        codeSituation: "ChangePassword_UnknownError",
+        codeSituation: "ChangePassword_UnknownError"
       }); // 여기선 내가 잘 모르는 에러라 뭘 할수가...   나중에 알수없는 에러라고 표시하자...
     }
     
     if(!foundUser) {
   
       res.status(404).json({
-        codeSituation: "ChangePassword_NotExsitingId",
+        codeSituation: "ChangePassword_NotExsitingId"
       }); 
       //res.status(403).send("no user by this id")
       return;
@@ -297,7 +318,7 @@ router.put('/change-password', async (req, res, next) => {
     
     else if(!foundUser.validatePassword(passwordCurrent)) {
       res.status(404).json({
-        codeSituation: "ChangePassword_WrongPassword",
+        codeSituation: "ChangePassword_WrongPassword"
       }); 
     }
     
@@ -317,14 +338,14 @@ router.put('/change-password', async (req, res, next) => {
         });
         
         res.status(404).json({
-          codeSituation: "ChangePassword_Succeeded",
+          codeSituation: "ChangePassword_Succeeded"
         }); 
         
       } 
       catch (error) {
         console.log(error);
         res.status(500).json({
-          codeSituation: "ChangePassword_UnknownError",
+          codeSituation: "ChangePassword_UnknownError"
         }); // 여기선 내가 잘 모르는 에러라 뭘 할수가...   나중에 알수없는 에러라고 표시하자...
       }
       

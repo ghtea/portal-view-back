@@ -26,8 +26,8 @@ const User = new Schema({
   twitter: String,
   google: String,
   
-  joined: { type: Date, default: Date.now },
-  accessed: { type: Date, default: Date.now },
+  joined: { type: Date, default: Date.now() },
+  accessed: { type: Date, default: Date.now() },
 
 }, { collection: 'User_', versionKey: false, strict: false} );
 
