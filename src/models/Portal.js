@@ -17,7 +17,7 @@ const schemaPortal = new Schema({    //   동일한 링크라도 사용 유저�
   // note: String,
   
   // 0 점 되면 죽는다.
-  life: Number,   //  1~30days   
+  lifespan: Number,   //  1~30days   
   listBooleanVisited: [Boolean],  //  [true, false, ...(30days)]    (30 + 1) * 30 / 2 =  465
   dateVisitedLast: Date,  
   

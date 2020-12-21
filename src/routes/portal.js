@@ -43,6 +43,9 @@ router.get('/:idPortal', async(req, res, next) => {
 router.get('/', (req, res) => {
   
   try {
+  try {
+    
+  
     const query = req.query;
 
 
@@ -95,6 +98,12 @@ router.get('/', (req, res) => {
     })
   
   
+  } catch (error){
+    console.log(error);
+    res.status(500).json({
+      codeSituation: "GetListPortal_UnknownError"
+    }); 
+  }
   } catch (error) {
     console.log(error)
     next(error)
@@ -150,13 +159,11 @@ router.post('/', async(req, res, next) => {
 
 
 //UPDATE
-router.put('/:idPortal', async(req, res, next) => {
+router.put('/update', async(req, res, next) => {
 
   try {
 
-    const filter = {
-      _id: req.params.idPortal
-    };
+    const _id = req.body.idPortal;
 
     const date = Date.now();
     
@@ -194,9 +201,11 @@ router.put('/:idPortal', async(req, res, next) => {
 router.put('/visit', async(req, res, next) => {
 
   try {
-
+  try {
+    
     const _id = req.body.idPortal;
     
+    console.log('visiting catched');
     
     
     let foundPortal = null;
@@ -225,30 +234,73 @@ router.put('/visit', async(req, res, next) => {
       const filter = {
         _id: _id
       };
+      const objPortal = Object.assign({}, foundPortal._doc);
       
+      console.log('objPortal');
+      console.log(objPortal);
       const date = Date.now();
+      const dateLast = objPortal.dateVisitedLast || objPortal.created;
+      const timeBetween = date - dateLast;
+      console.log(timeBetween);
       
-      let listBooleanVisited = foundPortal.listBooleanVisited;
-  
+      
+      let listBooleanVisited = objPortal.listBooleanVisited;
+      let listToAdd = [];
+      
+      const hoursBetween = timeBetween / (1000 * 60 * 60 );
+      console.log(hoursBetween);
+      if (hoursBetween > 23) {
+        listToAdd.push(true);
+        
+        let hoursBetweenRemaining = hoursBetween - 24;
+        
+        for (var i = 0; i < objPortal.lifespan; i++ ) {
+          if (hoursBetweenRemaining > 23){
+            //console.log('one loop')
+            
+            //console.log(hoursBetweenRemaining)
+            hoursBetweenRemaining -= 24;
+            //console.log(hoursBetweenRemaining)
+            
+            listToAdd.push(false);
+          }
+        }
+        
+        listBooleanVisited = listToAdd.concat(listBooleanVisited);
+        
+        for (var i = 0; i < objPortal.lifespan; i++ ) {
+          if (listBooleanVisited.length > objPortal.lifespan){
+            listBooleanVisited.pop();
+          }
+        }
+      
+        
+      } 
+      
   
       let update = {
   
-        listBooleanVisited: listBooleanVisited
-        , dateVisitedLast: date
+        listBooleanVisited: listBooleanVisited,
+        dateVisitedLast: date
       };
   
-  
+      console.log('visited this portal well');
+      
       await Portal.updateOne(filter, update);
-  
+      
       res.json({
         codeSituation: "VisitPortal_Succeeded"
       });
     
-    
-    
-    
-    
-    
+    }
+  
+  } catch(error) {
+    console.log(error);
+    //res.status(500).send(error); // 여기선 내가 잘 모르는 에러라 뭘 할수가...   나중에 알수없는 에러라고 표시하자...
+    res.status(500).json({
+      codeSituation: "VisitPortal_UnknownError"
+    }); // 여기선 내가 잘 모르는 에러라 뭘 할수가...   나중에 알수없는 에러라고 표시하자...
+  }
   } catch (error) {
     next(error)
   }

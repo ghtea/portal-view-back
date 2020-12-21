@@ -19,31 +19,28 @@ dotenv.config({
 
 const app = express();
 
-const listUrlFront = [process.env.URL_FRONT, process.env.URL_FRONT_TESTING]
+const listAllowedOrigin = [process.env.URL_FRONT, process.env.URL_FRONT_TESTING]
 
 const checkOrigin = (origin, callback) => {
-  
-  if (listUrlFront.indexOf(origin) !== -1) {
-    
-    callback(null, true)
-    
-  } else {
-    
-    callback(new Error('Not allowed by CORS'))
+  // allow requests with no origin 
+  // (like mobile apps or curl requests)
+  if(!origin) return callback(null, true);
+  if(listAllowedOrigin.indexOf(origin) === -1){
+    var msg = 'The CORS policy for this site does not ' +
+              'allow access from the specified Origin.';
+    return callback(new Error(msg), false);
   }
-    
+  return callback(null, true);
 }
+  
+app.use(cors({
+  origin: checkOrigin,    // or true
+  credentials: true,
+  exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false
+}));
 
-/*
-app.use(cors({
-  origin: checkOrigin,
-  credentials: true
-}));
-*/
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
 
 /*
 app.use( function(req, res, next) {
